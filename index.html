@@ -11,7 +11,103 @@
     <script src="./script.js?v=20261111-clean" defer></script>
     <link rel="icon" type="image/png" href="./favicon-logo2.png?v=20261111">
     <meta property="og:site_name" content="希派科技">
-    <script src="./contact/verification.js" defer></script>
+    <script type="module" id="offer-inbox-client">
+const form = document.querySelector(".contact-form");
+const button = form.querySelector('button[type="submit"]');
+const displayed = document.querySelector("#verification-code");
+const answer = document.querySelector("#verification-answer");
+const message = document.querySelector("#verification-status");
+const feedback = document.querySelector("#contact-result");
+const widget = document.querySelector(".cf-turnstile");
+const confirmation = document.querySelector("#contact-confirmation");
+
+const configured = !form.action.startsWith("https://example.invalid/") &&
+  widget.dataset.sitekey !== "YOUR_TURNSTILE_SITE_KEY";
+let code = "";
+let proof = "";
+let sending = false;
+let received = false;
+
+function update() {
+  const verified = code !== "" && answer.value === code;
+  answer.setCustomValidity(verified ? "" : "請輸入畫面上的驗證碼。");
+  button.disabled = !configured || !verified || !proof || sending || received;
+  if (verified) {
+    message.textContent = proof ? "驗證通過，可以提交。" : "數字正確，請等待安全驗證完成。";
+  } else {
+    message.textContent = answer.value.length === 6 ? "驗證碼不符，請重新輸入。" : "完成驗證後即可提交。";
+  }
+}
+
+function refresh() {
+  const number = crypto.getRandomValues(new Uint32Array(1))[0] % 900000 + 100000;
+  const candidate = String(number);
+  code = candidate === code ? String(number === 999999 ? 100000 : number + 1) : candidate;
+  displayed.value = code;
+  answer.value = "";
+  update();
+}
+
+window.offerSecurityVerified = token => { proof = token; update(); };
+window.offerSecurityExpired = () => { proof = ""; update(); };
+window.offerSecurityError = () => {
+  window.offerSecurityExpired();
+  feedback.textContent = "安全驗證無法完成，請重新載入頁面。";
+};
+
+answer.addEventListener("input", update);
+document.querySelector("#verification-refresh").addEventListener("click", () => {
+  refresh();
+  answer.focus();
+});
+window.addEventListener("pageshow", event => { if (event.persisted && !received) refresh(); });
+refresh();
+
+if (configured) {
+  const script = document.createElement("script");
+  script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+  script.async = true;
+  script.addEventListener("error", window.offerSecurityError);
+  document.head.append(script);
+} else {
+  feedback.textContent = "此聯絡表單尚未啟用。";
+}
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+  update();
+  if (button.disabled || !form.checkValidity()) return;
+  const data = new URLSearchParams(new FormData(form));
+  data.set("cf-turnstile-response", proof);
+  sending = true;
+  update();
+  feedback.textContent = "正在提交…";
+  try {
+    const response = await fetch(form.action, { method: "POST", body: data, credentials: "omit" });
+    const result = await response.json();
+    if (response.status !== 201 || !Number.isSafeInteger(result.caseNumber) || result.caseNumber < 1) {
+      feedback.textContent = result.error || "目前無法確認是否已收件，請透過 LINE 或 FB 詢問。";
+      return;
+    }
+    received = true;
+    document.querySelector("#contact-form-heading").hidden = true;
+    confirmation.querySelector("strong").textContent = "#" + result.caseNumber;
+    confirmation.hidden = false;
+    form.reset();
+    form.hidden = true;
+    confirmation.focus();
+  } catch {
+    feedback.textContent = "目前無法確認是否已收件。已保留填寫內容，請透過 LINE 或 FB 詢問。";
+  } finally {
+    sending = false;
+    if (!received) {
+      window.offerSecurityExpired();
+      window.turnstile?.reset();
+    }
+    update();
+  }
+});
+</script>
   </head>
   <body>
     <div class="rwd-wrapper">
@@ -167,14 +263,11 @@
               <span aria-current="page">聯絡我們</span>
             </nav>
             <section class="contact-content" aria-labelledby="contact-title">
-              <header class="contact-intro">
+              <header class="contact-intro" id="contact-form-heading">
                 <h1 id="contact-title">請填寫您的需求</h1>
                 <p>官方報價、快速處理、服務全國、就近分配</p>
               </header>
-              <form class="contact-form" action="https://formsubmit.co/joanne.wu@cti-cert.com" method="post">
-                <input type="hidden" name="_subject" value="希派科技網站｜聯絡我們表單">
-                <input type="hidden" name="_template" value="table">
-                <input type="hidden" name="_next" value="https://xipai-taiwan.github.io/Home/">
+              <form class="contact-form" action="https://example.invalid/api/inquiries" method="post">
                 <fieldset class="contact-group">
                   <legend>個人資訊</legend>
                   <div class="contact-fields">
@@ -254,9 +347,15 @@
                   <p id="verification-status" class="verification-status" role="status">完成驗證後即可提交。</p>
                 </fieldset>
                 <noscript><p class="contact-note">請啟用 JavaScript 以完成驗證及提交表單。</p></noscript>
-                <p class="contact-note" id="contact-send-note">表單資料由 FormSubmit 轉寄給希派科技，用於處理本次洽詢。</p>
-                <button class="contact-submit" type="submit" aria-describedby="contact-send-note verification-status" disabled>立即提交</button>
+                <div class="contact-note"><div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-action="contact" data-size="flexible" data-appearance="interaction-only" data-callback="offerSecurityVerified" data-expired-callback="offerSecurityExpired" data-error-callback="offerSecurityError"></div></div>
+<p class="contact-note" id="contact-result" role="status"></p>
+                <button class="contact-submit" type="submit" aria-describedby="verification-status contact-result" disabled>立即提交</button>
               </form>
+<section id="contact-confirmation" class="contact-intro" tabindex="-1" hidden>
+<h2>已收到您的詢問</h2>
+<p>案件編號 <strong></strong></p>
+<p><a href="https://xipai-taiwan.github.io/Home/">返回首頁</a></p>
+</section>
             </section>
           </div>
         </main>
