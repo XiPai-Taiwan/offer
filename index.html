@@ -7,11 +7,12 @@
     <meta name="description" content="填寫希派科技聯絡表單，洽詢產品資訊、報價與技術支援。">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3">
     <link href="./styles.css?v=20261111-clean" rel="stylesheet">
-    <link href="./contact/contact.css?v=20261125-home-nav" rel="stylesheet">
+    <link href="./contact/contact.css?v=20261126-verification" rel="stylesheet">
     <script src="./script.js?v=20261111-clean" defer></script>
     <link rel="icon" type="image/png" href="./favicon-logo2.png?v=20261111">
     <meta property="og:site_name" content="希派科技">
-</head>
+    <script src="./contact/verification.js" defer></script>
+  </head>
   <body>
     <div class="rwd-wrapper">
       <div id="wrap">
@@ -420,8 +421,19 @@
                     </div>
                   </div>
                 </fieldset>
+                <fieldset class="contact-verification" aria-describedby="verification-status">
+                  <legend>送出前驗證</legend>
+                  <div class="verification-code-row">
+                    <output id="verification-code" class="verification-code" aria-label="驗證碼" aria-live="polite"></output>
+                    <button id="verification-refresh" class="verification-refresh" type="button">換一組</button>
+                  </div>
+                  <label for="verification-answer">輸入上方 6 位數字</label>
+                  <input id="verification-answer" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" aria-describedby="verification-status" required>
+                  <p id="verification-status" class="verification-status" role="status">完成驗證後即可提交。</p>
+                </fieldset>
+                <noscript><p class="contact-note">請啟用 JavaScript 以完成驗證及提交表單。</p></noscript>
                 <p class="contact-note" id="contact-send-note">表單資料由 FormSubmit 轉寄給希派科技，用於處理本次洽詢。</p>
-                <button class="contact-submit" type="submit" aria-describedby="contact-send-note">立即提交</button>
+                <button class="contact-submit" type="submit" aria-describedby="contact-send-note verification-status" disabled>立即提交</button>
               </form>
             </section>
           </div>
