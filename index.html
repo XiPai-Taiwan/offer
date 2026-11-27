@@ -70,7 +70,10 @@ if (configured) {
   script.addEventListener("error", window.offerSecurityError);
   document.head.append(script);
 } else {
-  feedback.textContent = "此聯絡表單尚未啟用。";
+  feedback.textContent = "線上表單暫停收件，請從頁首的「聯絡我們」選擇 LINE 或 FB。";
+  form.prepend(feedback);
+  form.querySelectorAll("fieldset").forEach(group => { group.disabled = true; });
+  answer.closest(".contact-verification").hidden = true;
 }
 
 form.addEventListener("submit", async event => {
@@ -267,7 +270,7 @@ form.addEventListener("submit", async event => {
                 <h1 id="contact-title">請填寫您的需求</h1>
                 <p>官方報價、快速處理、服務全國、就近分配</p>
               </header>
-              <form class="contact-form" action="https://example.invalid/api/inquiries" method="post">
+              <form class="contact-form" action="https://offer-inbox.xipai-tw.workers.dev/api/inquiries" method="post">
                 <fieldset class="contact-group">
                   <legend>個人資訊</legend>
                   <div class="contact-fields">
@@ -347,7 +350,7 @@ form.addEventListener("submit", async event => {
                   <p id="verification-status" class="verification-status" role="status">完成驗證後即可提交。</p>
                 </fieldset>
                 <noscript><p class="contact-note">請啟用 JavaScript 以完成驗證及提交表單。</p></noscript>
-                <div class="contact-note"><div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-action="contact" data-size="flexible" data-appearance="interaction-only" data-callback="offerSecurityVerified" data-expired-callback="offerSecurityExpired" data-error-callback="offerSecurityError"></div></div>
+                <div class="contact-note"><div class="cf-turnstile" data-sitekey="0x4AAAAAAGVXGcytB1fCsa5n" data-action="contact" data-size="flexible" data-appearance="interaction-only" data-callback="offerSecurityVerified" data-expired-callback="offerSecurityExpired" data-error-callback="offerSecurityError"></div></div>
 <p class="contact-note" id="contact-result" role="status"></p>
                 <button class="contact-submit" type="submit" aria-describedby="verification-status contact-result" disabled>立即提交</button>
               </form>
